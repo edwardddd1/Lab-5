@@ -1,349 +1,268 @@
 <template>
-  <div class="app-container">
+  <div class="container">
+    <header class="app-header">
+      <h1>Mood <span class="accent">Check-in</span></h1>
+      <p class="subtitle">How is your mind today?</p>
+    </header>
 
-    <div class="content-wrapper">
+    <div class="card form-card">
+      <div class="input-group">
+        <label>Name</label>
+        <input
+          v-model="name"
+          placeholder="Enter your name"
+          :disabled="loading"
+          class="input-field"
+        />
+      </div>
+      
+      <div class="input-group">
+        <label>Your Mood</label>
+        <textarea
+          v-model="mood"
+          placeholder="I'm feeling a bit..."
+          :disabled="loading"
+          class="input-field"
+        ></textarea>
+      </div>
 
-      <header class="header">
-        <h1>MoodAI</h1>
-        <p>Share your mood and get a supportive AI response.</p>
-      </header>
+      <div class="btn-group">
+        <button
+          @click="submitMood"
+          :disabled="loading || !name || !mood"
+          class="btn submit-btn"
+        >
+          <span v-if="loading" class="loader-text">✨ Processing...</span>
+          <span v-else>Share with AI</span>
+        </button>
+      </div>
 
-      <main class="main-content">
-
-        <section class="form-section">
-          <div class="form-card">
-
-            <h2>Mood Check-in</h2>
-
-            <input
-              v-model="name"
-              placeholder="Your name"
-              autocomplete="off"
-            />
-
-            <textarea
-              v-model="mood"
-              placeholder="How are you feeling today?"
-            ></textarea>
-
-            <button @click="submitMood" :disabled="loading">
-              {{ loading ? "Processing..." : "Submit Mood" }}
-            </button>
-
-          </div>
-        </section>
-
-        <section class="history-section" v-if="history.length > 0">
-
-          <h3>Mood History</h3>
-
-          <table class="db-table" aria-label="Mood history table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Mood</th>
-                <th>AI Message</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="(entry, index) in history" :key="index">
-                <td>{{ entry.full_name }}</td>
-                <td>{{ entry.mood_text }}</td>
-                <td>{{ entry.ai_message }}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <p class="stats">{{ history.length }} row(s) in set</p>
-
-        </section>
-
-      </main>
-
-      <footer class="footer">
-        © 2026 MoodAI • Built with Vue & AI
-      </footer>
-
+      <p v-if="error" class="error-msg">{{ error }}</p>
+      
+      <transition name="fade">
+        <div v-if="aiMessage" class="ai-box">
+          <div class="ai-badge">AI ADVISOR</div>
+          <p>{{ aiMessage }}</p>
+        </div>
+      </transition>
     </div>
 
+    <div class="card history-card">
+      <div class="history-header">
+        <h3>Recent Reflections</h3>
+        <button @click="fetchHistory" class="btn refresh-btn">
+          <span>↻</span> Refresh
+        </button>
+      </div>
+      
+      <div class="table-container">
+        <table v-if="history.length > 0" class="history-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Mood</th>
+              <th>AI Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(entry, index) in history" :key="index">
+              <td class="font-bold">{{ entry.full_name }}</td>
+              <td class="mood-text-cell">{{ entry.mood_text }}</td>
+              <td class="ai-text-cell">{{ entry.ai_message }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="empty-state">
+          <p>No history found yet. Start the conversation!</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import api from "../services/api";
+import api from '../services/api';
 
 export default {
   data() {
     return {
-      name: "",
-      mood: "",
-      aiMessage: "",
+      name: '',
+      mood: '',
+      aiMessage: '',
       loading: false,
-      history: [],
+      error: null,
+      history: []
     };
   },
-
   mounted() {
     this.fetchHistory();
   },
-
   methods: {
-    async fetchHistory() {
-      try {
-        const res = await api.get("/moods");
-        this.history = res.data;
-      } catch (err) {
-        console.error("Failed to fetch history:", err);
-      }
-    },
-
     async submitMood() {
-      if (!this.name || !this.mood) {
-        return alert("Please fill in both fields");
-      }
-
       this.loading = true;
-
+      this.error = null;
+      this.aiMessage = ''; 
       try {
-        const res = await api.post("/moods", {
+        const res = await api.post('/moods', {
           full_name: this.name,
-          mood_text: this.mood,
+          mood_text: this.mood
         });
 
         this.aiMessage = res.data.ai_message;
-
+        this.mood = '';
         await this.fetchHistory();
-
-        this.mood = "";
       } catch (err) {
-        alert("Submit failed. Make sure the server is running on port 3000.");
+        this.error = "Failed to connect to server. Is the backend running?";
       } finally {
         this.loading = false;
       }
     },
-  },
+    async fetchHistory() {
+      try {
+        const res = await api.get('/moods');
+        this.history = res.data;
+      } catch (err) {
+        console.error("Could not fetch history from backend.");
+      }
+    }
+  }
 };
 </script>
 
 <style scoped>
-/* FULL VIEWPORT CONTAINER */
-.app-container {
-  height: 100vh;
-  width: 100vw;
-  background: linear-gradient(135deg, #67e8f9, #22d3ee);
-  display: flex;
+/* Core Layout */
+.container { 
+  max-width: 800px; 
+  margin: 40px auto; 
+  padding: 0 20px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
+  color: #1a1a1a; 
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Typography */
+.app-header { text-align: center; margin-bottom: 40px; }
+h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+.accent { color: #555; font-weight: 300; }
+.subtitle { color: #666; font-size: 1.1rem; }
+
+/* Cards */
+.card { 
+  background: #ffffff; 
+  padding: 30px; 
+  border-radius: 20px; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+  margin-bottom: 30px; 
+  border: 1px solid #f0f0f0;
+}
+
+/* Inputs */
+.input-group { margin-bottom: 20px; }
+.input-group label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: #444; }
+
+.input-field { 
+  width: 100%; 
+  padding: 14px; 
+  border-radius: 12px; 
+  border: 2px solid #eee; 
+  font-size: 16px; 
+  background: #fdfdfd; 
+  color: #1a1a1a; 
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #000;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+}
+
+textarea.input-field { min-height: 120px; resize: vertical; }
+
+/* Buttons */
+.btn { 
+  padding: 14px 28px; 
+  border-radius: 12px; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: 700; 
+  font-size: 1rem;
+  transition: all 0.2s active; 
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #0f172a;
 }
 
-/* CENTERED CONTENT WRAPPER */
-.content-wrapper {
-  background: #ffffffee;
+.submit-btn { 
+  background-color: #000; 
+  color: #fff; 
+  width: 100%;
+}
+
+.submit-btn:hover:not(:disabled) { background-color: #222; transform: translateY(-1px); }
+.submit-btn:active { transform: translateY(0); }
+
+.refresh-btn { 
+  background: #f0f0f0; 
+  color: #000; 
+  font-size: 0.85rem; 
+  padding: 8px 16px;
+}
+
+.refresh-btn:hover { background: #e5e5e5; }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* AI Response Box */
+.ai-box { 
+  background: #000; 
+  padding: 24px; 
+  margin-top: 25px; 
+  border-radius: 16px; 
+  color: #fff; 
+  position: relative;
+  line-height: 1.6;
+}
+
+.ai-badge {
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  background: #fff;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 4px 12px;
   border-radius: 20px;
-  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.12);
-  max-width: 960px;
-  width: 100%;
-  padding: 40px 60px;
-  display: flex;
-  flex-direction: column;
-  gap: 50px;
-  box-sizing: border-box;
+  border: 2px solid #000;
 }
 
-/* HEADER */
-.header {
-  text-align: center;
-  user-select: none;
-}
-.header h1 {
-  margin: 0 0 8px;
-  font-weight: 800;
-  font-size: 3rem;
-  letter-spacing: 1.1px;
-  color: #0c4a6e;
-}
-.header p {
-  margin: 0;
-  font-weight: 500;
-  font-size: 1.1rem;
-  color: #475569;
-}
+/* History Table */
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.history-header h3 { font-size: 1.4rem; margin: 0; }
 
-/* MAIN CONTENT */
-.main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
+.table-container { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; }
+.history-table { width: 100%; border-collapse: collapse; background: white; }
+.history-table th { background-color: #fafafa; padding: 15px; text-align: left; font-size: 0.85rem; text-transform: uppercase; color: #888; border-bottom: 2px solid #eee; }
+.history-table td { padding: 15px; border-bottom: 1px solid #f5f5f5; font-size: 0.95rem; }
 
-/* FORM SECTION */
-.form-section {
-  width: 100%;
-}
+.font-bold { font-weight: 600; }
+.mood-text-cell { color: #555; }
+.ai-text-cell { color: #000; font-style: italic; }
 
-.form-card {
-  background: white;
-  padding: 40px 50px;
-  border-radius: 18px;
-  box-shadow: 0 20px 40px rgb(34 211 238 / 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  transition: box-shadow 0.3s ease;
-}
-.form-card:hover {
-  box-shadow: 0 25px 60px rgb(34 211 238 / 0.5);
-}
+.error-msg { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 8px; margin-top: 15px; font-weight: 500; text-align: center; }
 
-.form-card h2 {
-  text-align: center;
-  font-weight: 700;
-  font-size: 2.2rem;
-  color: #0e7490;
-  margin-bottom: 0;
-}
+.empty-state { padding: 40px; text-align: center; color: #aaa; }
 
-/* INPUTS */
-input,
-textarea {
-  width: 100%;
-  padding: 16px 22px;
-  border-radius: 14px;
-  border: 1.5px solid #94a3b8;
-  font-size: 18px;
-  font-weight: 500;
-  color: #334155;
-  background: #f8fafc;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-input::placeholder,
-textarea::placeholder {
-  color: #94a3b8;
-  font-weight: 400;
-  font-style: italic;
-}
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: #06b6d4;
-  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.25);
-  background: white;
-}
-textarea {
-  min-height: 140px;
-  resize: vertical;
-}
+/* Animations */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+.fade-enter, .fade-leave-to { opacity: 0; }
 
-/* BUTTON */
-button {
-  width: 100%;
-  padding: 18px 0;
-  border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #06b6d4, #22d3ee);
-  color: white;
-  font-weight: 700;
-  font-size: 18px;
-  cursor: pointer;
-  transition: box-shadow 0.25s ease, transform 0.2s ease;
-  user-select: none;
-}
-button:hover:not(:disabled) {
-  box-shadow: 0 10px 40px rgba(6, 182, 212, 0.7);
-  transform: translateY(-3px);
-}
-button:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* HISTORY SECTION */
-.history-section {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.history-section h3 {
-  font-weight: 700;
-  font-size: 2rem;
-  color: #0c4a6e;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-/* TABLE */
-.db-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 18px;
-  min-width: 700px;
-  font-weight: 500;
-  color: #334155;
-}
-.db-table th,
-.db-table td {
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: left;
-}
-.db-table th {
-  background: #06b6d4;
-  color: white;
-  font-weight: 700;
-}
-.db-table tr:nth-child(even) {
-  background: #f1f5f9;
-}
-.db-table tr:hover {
-  background: #bae6fd;
-  transition: background-color 0.3s ease;
-}
-
-/* STATS */
-.stats {
-  margin-top: 18px;
-  font-size: 16px;
-  color: #475569;
-  text-align: right;
-}
-
-/* FOOTER */
-.footer {
-  margin-top: 30px;
-  font-weight: 600;
-  color: #64748b;
-  text-align: center;
-  user-select: none;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .content-wrapper {
-    padding: 30px 30px;
-  }
-  .form-card {
-    padding: 30px 30px;
-  }
-  .header h1 {
-    font-size: 2.4rem;
-  }
-  .header p {
-    font-size: 1rem;
-  }
-  button {
-    font-size: 16px;
-  }
-  .db-table {
-    font-size: 16px;
-    min-width: 100%;
-  }
+@media (max-width: 600px) {
+  .container { margin: 20px auto; }
+  h1 { font-size: 1.8rem; }
 }
 </style>
