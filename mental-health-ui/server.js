@@ -6,7 +6,7 @@ import moodRoutes from "../routes/moods.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 1000;
 
 // Middleware
 app.use(cors()); // Allows Vue to communicate with Express
