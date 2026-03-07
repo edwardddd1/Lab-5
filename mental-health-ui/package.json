@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "homepage": "https://edwardddd1.github.io/mental-health-ui",
+  "homepage": "https://karj-sys.github.io/LAB5/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -21,5 +21,8 @@
     "gh-pages": "^6.3.0",
     "vite": "^7.3.1",
     "vite-plugin-vue-devtools": "^8.0.6"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }
