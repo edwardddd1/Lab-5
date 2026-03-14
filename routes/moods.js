@@ -4,16 +4,7 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-/*
-   BASE PATH = /api/moods
-   So:
-   GET    /api/moods
-   POST   /api/moods
-*/
 
-// ===============================
-// 1️⃣ GET ALL MOOD HISTORY
-// ===============================
 router.get("/", async (req, res) => {
   try {
     const query = `
